@@ -8,3 +8,4 @@ bytemuck = "1"
 glow = "0.13"
 beryllium = { git = "https://github.com/Lokathor/beryllium.git" }
 imagine = "0.0.5"
+glam = "0.31.0"
