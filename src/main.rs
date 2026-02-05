@@ -10,6 +10,7 @@ struct App {
     window: video::GlWindow,
     running: bool,
 
+    gl: glow::Context,
     compute_program: glow::Program,
     output_tex: glow::Texture,
 }
@@ -42,45 +43,46 @@ fn init() -> App {
         .create_gl_window(win_args)
         .expect("couldn't make a window and context");
 
-    let gl = unsafe {
+    let gl: Context = unsafe {
         glow::Context::from_loader_function(|s| {
             window.get_proc_address(s.as_ptr() as *const _)
         })
     };
 
-    let mut output_tex = 0;
-    unsafe {
-        glGenTextures(1, &mut output_tex);
-        glBindTexture(GL_TEXTURE_2D, output_tex);
-
-        TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST as _);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST as _);
-
-        glTexImage2D(
-            GL_TEXTURE_2D,
-            0,
-            GL_RGBA32F as _,
-            WIDTH,
-            HEIGHT,
-            0,
-            GL_RGBA,
-            GL_FLOAT,
-            std::ptr::null(),
-        );
-
-        glBindImageTexture(
-            0,
-            output_tex,
-            0,
-            GL_FALSE,
-            0,
-            GL_WRITE_ONLY,
-            GL_RGBA32F,
-        );
-    }
+    let output_tex = unsafe { 
+        let tex = gl.create_texture().unwrap(); 
+        gl.bind_texture(glow::TEXTURE_2D, Some(tex)); 
+        
+        gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MIN_FILTER, glow::NEAREST as i32); 
+        gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MAG_FILTER, glow::NEAREST as i32); 
+        
+        gl.tex_image_2d( 
+            glow::TEXTURE_2D, 
+            0, 
+            glow::RGBA32F as i32, 
+            WIDTH, 
+            HEIGHT, 
+            0, 
+            glow::RGBA, 
+            glow::FLOAT, 
+            None, 
+        ); 
+        
+        gl.bind_image_texture( 
+            0, 
+            tex, 
+            0, 
+            false, 
+            0, 
+            glow::WRITE_ONLY, 
+            glow::RGBA32F, 
+        ); 
+        
+        tex
+    };
 
     let compute_src = include_str!("compute.glsl");
-    let compute_program = unsafe { create_compute_program(compute_src) };
+    let compute_program = create_compute_program(&gl, compute_src);
 
 
     App {
@@ -88,22 +90,33 @@ fn init() -> App {
         window,
         running: true,
 
+        gl,
         compute_program,
         output_tex,
     }
 }
 
-unsafe fn create_compute_program(src: &str) -> u32 {
-    let shader = glCreateShader(GL_COMPUTE_SHADER);
-    glShaderSource(shader, 1, &src.as_ptr().cast(), std::ptr::null());
-    glCompileShader(shader);
+fn create_compute_program(gl: &glow::Context, src: &str) -> glow::Program {
+    unsafe {
+        let shader = gl.create_shader(glow::COMPUTE_SHADER).unwrap();
+        gl.shader_source(shader, src);
+        gl.compile_shader(shader);
 
-    let program = glCreateProgram();
-    glAttachShader(program, shader);
-    glLinkProgram(program);
+        if !gl.get_shader_compile_status(shader) {
+            panic!("Compute shader error: {}", gl.get_shader_info_log(shader));
+        }
 
-    glDeleteShader(shader);
-    program
+        let program = gl.create_program().unwrap();
+        gl.attach_shader(program, shader);
+        gl.link_program(program);
+
+        if !gl.get_program_link_status(program) { 
+            panic!("Program link error: {}", gl.get_program_info_log(program)); 
+        }
+
+        gl.delete_shader(shader);
+        program
+    }
 }
 
 fn update(app: &mut App) {
@@ -120,14 +133,15 @@ fn handle_event(app: &mut App) {
 }
 
 fn render(app: &mut App) {
+    let gl = &app.gl;
     unsafe {
-        glUseProgram(app.compute_program);
+        gl.use_program(Some(app.compute_program));
 
         let gx = (WIDTH as u32 + 7) / 8;
         let gy = (HEIGHT as u32 + 7) / 8;
-        glDispatchCompute(gx, gy, 1);
+        gl.dispatch_compute(gx, gy, 1);
 
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        gl.memory_barrier(glow::SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
     app.window.swap_window();
 }
