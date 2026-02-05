@@ -5,7 +5,6 @@ edition = "2024"
 
 [dependencies]
 bytemuck = "1"
-ogl33 = { version = "0.2.0", features = ["debug_error_checks"]}
-
+glow = "0.13"
 beryllium = { git = "https://github.com/Lokathor/beryllium.git" }
 imagine = "0.0.5"

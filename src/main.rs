@@ -1,5 +1,5 @@
 use beryllium::*;
-use ogl33::*;
+use glow::*;
 
 const WINDOW: &str = "OpenGL + Rust";
 const WIDTH: i32 = 800;
@@ -9,6 +9,9 @@ struct App {
     sdl: Sdl,
     window: video::GlWindow,
     running: bool,
+
+    compute_program: glow::Program,
+    output_tex: glow::Texture,
 }
 
 fn main() {
@@ -39,15 +42,68 @@ fn init() -> App {
         .create_gl_window(win_args)
         .expect("couldn't make a window and context");
 
+    let gl = unsafe {
+        glow::Context::from_loader_function(|s| {
+            window.get_proc_address(s.as_ptr() as *const _)
+        })
+    };
+
+    let mut output_tex = 0;
     unsafe {
-        load_gl_with(|f_name| window.get_proc_address(f_name as *const u8));
+        glGenTextures(1, &mut output_tex);
+        glBindTexture(GL_TEXTURE_2D, output_tex);
+
+        TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST as _);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST as _);
+
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RGBA32F as _,
+            WIDTH,
+            HEIGHT,
+            0,
+            GL_RGBA,
+            GL_FLOAT,
+            std::ptr::null(),
+        );
+
+        glBindImageTexture(
+            0,
+            output_tex,
+            0,
+            GL_FALSE,
+            0,
+            GL_WRITE_ONLY,
+            GL_RGBA32F,
+        );
     }
+
+    let compute_src = include_str!("compute.glsl");
+    let compute_program = unsafe { create_compute_program(compute_src) };
+
 
     App {
         sdl,
         window,
         running: true,
+
+        compute_program,
+        output_tex,
     }
+}
+
+unsafe fn create_compute_program(src: &str) -> u32 {
+    let shader = glCreateShader(GL_COMPUTE_SHADER);
+    glShaderSource(shader, 1, &src.as_ptr().cast(), std::ptr::null());
+    glCompileShader(shader);
+
+    let program = glCreateProgram();
+    glAttachShader(program, shader);
+    glLinkProgram(program);
+
+    glDeleteShader(shader);
+    program
 }
 
 fn update(app: &mut App) {
@@ -65,8 +121,13 @@ fn handle_event(app: &mut App) {
 
 fn render(app: &mut App) {
     unsafe {
-        glClearColor(0.5, 0.3, 0.3, 1.0);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glUseProgram(app.compute_program);
+
+        let gx = (WIDTH as u32 + 7) / 8;
+        let gy = (HEIGHT as u32 + 7) / 8;
+        glDispatchCompute(gx, gy, 1);
+
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
     app.window.swap_window();
 }
