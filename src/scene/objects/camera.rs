@@ -1,6 +1,12 @@
-mod transform;
+use crate::scene::objects::SceneObject;
+use crate::scene::components::Transform;
 
 pub struct Camera {
     pub transform: Transform,
-    pub FOV: i32,
+    pub fov: i32,
+}
+
+impl SceneObject for Camera {
+    fn ready() {}
+    fn update() {}
 }
