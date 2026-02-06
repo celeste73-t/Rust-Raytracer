@@ -6,7 +6,7 @@ pub struct ComputePipeline {
 
 impl ComputePipeline {
     pub fn new(gl: &Context) -> Self {
-        let src = include_str!("../shaders/compute.glsl");
+        let src = include_str!("../shaders/raytracer.glsl");
         let program = create_compute_program(gl, &src);
         Self { program }
     }
