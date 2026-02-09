@@ -7,7 +7,7 @@ pub struct Light {
     pub intensity: f32,
 }
 
-impl SceneObject for Camera {
+impl SceneObject for Light {
     fn ready() {}
     fn update() {}
 }

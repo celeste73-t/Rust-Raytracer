@@ -12,7 +12,7 @@ pub struct App {
     pub display: gl::display::DisplayPipeline, 
     pub output_tex: glow::Texture, 
     
-    pub frame: i32, // dummy value
+    pub frame: i32,
 }
 
 impl App {
@@ -71,7 +71,7 @@ impl App {
     }
 
     fn render(&mut self) {
-        self.compute.run(&self.gl, self.output_tex, self.frame); 
+        self.compute.run(&self.gl, self.output_tex, self.frame); // ajoute la scene (self.scene)
         self.display.draw(&self.gl, self.output_tex);
 
         self.window.swap_window();
