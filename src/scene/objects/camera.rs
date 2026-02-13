@@ -7,6 +7,6 @@ pub struct Camera {
 }
 
 impl SceneObject for Camera {
-    fn ready() {}
-    fn update() {}
+    fn ready(&mut self) {}
+    fn update(&mut self, _delta:f32) {}
 }

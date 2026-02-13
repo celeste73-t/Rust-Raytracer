@@ -8,6 +8,6 @@ pub struct Sphere {
 }
 
 impl SceneObject for Sphere {
-    fn ready() {}
-    fn update() {}
+    fn ready(&mut self) {}
+    fn update(&mut self, _delta:f32) {}
 }

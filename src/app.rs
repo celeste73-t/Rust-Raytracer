@@ -1,6 +1,7 @@
 use beryllium::*;
 
 use crate::gl;
+use crate::scene::Scene;
 
 pub struct App {
     pub sdl: Sdl,
@@ -13,6 +14,8 @@ pub struct App {
     pub output_tex: glow::Texture, 
     
     pub frame: i32,
+
+    pub scene: Scene,
 }
 
 impl App {
@@ -42,6 +45,9 @@ impl App {
         let compute = gl::compute::ComputePipeline::new(&gl); 
         let display = gl::display::DisplayPipeline::new(&gl);
 
+        let scene = Scene::new();
+        // scene.add();
+
         Self { 
             sdl, 
             window, 
@@ -53,6 +59,7 @@ impl App {
             output_tex, 
 
             frame: 0, 
+            scene,
         }
     }
 

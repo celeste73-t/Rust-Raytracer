@@ -1,5 +1,6 @@
 mod app;
 mod gl;
+mod scene;
 
 fn main() {
     let mut app = app::App::new();

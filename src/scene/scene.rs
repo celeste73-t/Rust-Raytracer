@@ -1,3 +1,5 @@
+use crate::scene::SceneObject;
+
 pub struct Scene {
     objects: Vec<Box<dyn SceneObject>>,
 }
@@ -15,9 +17,9 @@ impl Scene {
         self.objects.push(obj);
     }
     // Update all the object of the scene, called all the frame
-    pub fn update(&mut self, dt: f32) {
+    pub fn update(&mut self, delta: f32) {
         for obj in self.objects.iter_mut() {
-            obj.update(dt);
+            obj.update(delta);
         }
     }
 }

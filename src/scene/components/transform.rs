@@ -16,7 +16,7 @@ impl Transform {
                 self.rotation.y,
                 self.rotation.z,
             ),
-            self.translation,
+            self.position,
         )
     }
 }
