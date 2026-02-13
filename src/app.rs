@@ -1,4 +1,5 @@
 use beryllium::*;
+use std::time::{Instant};
 
 use crate::gl;
 use crate::scene::Scene;
@@ -13,6 +14,7 @@ pub struct App {
     pub display: gl::display::DisplayPipeline, 
     pub output_tex: glow::Texture, 
     
+    pub last_frame: Instant,
     pub frame: i32,
 
     pub scene: Scene,
@@ -58,12 +60,19 @@ impl App {
             display, 
             output_tex, 
 
+            last_frame: Instant::now(),
             frame: 0, 
             scene,
         }
     }
 
     pub fn update(&mut self) {
+        // get delta time
+        let now = Instant::now();
+        let delta = now.duration_since(self.last_frame).as_secs_f32();
+        
+        self.scene.update(delta);
+
         self.handle_event(); 
         self.render(); 
         self.frame += 1;
